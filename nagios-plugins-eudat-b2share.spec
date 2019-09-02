@@ -14,7 +14,7 @@
 #   limitations under the License.
 
 Name:		nagios-plugins-eudat-b2share
-Version:	0.1
+Version:	0.1.1
 Release:	1%{?dist}
 Summary:	Nagios B2SHARE probe
 License:	Apache License, Version 2.0
@@ -55,6 +55,8 @@ install -m 755 check_b2share.py %{buildroot}/%{_libexecdir}/argo-monitoring/prob
 %attr(0755,root,root) /%{_libexecdir}/argo-monitoring/probes/%{probe_namespace}/check_b2share.py
 
 %changelog
+* Mon Sep 02 2019 Harri Hirvonsalo   <harri.hirvonsalo@csc.fi> - 0.1.1-1
+- Improved error handling to address false positive alerts.
 * Wed Dec 05 2018 Harri Hirvonsalo   <harri.hirvonsalo@csc.fi> - 0.1-1
 - Added requirements to specfile
 * Tue Nov 27 2018 Themis Zamani  <themiszamani@gmail.com> - 0.1-1
