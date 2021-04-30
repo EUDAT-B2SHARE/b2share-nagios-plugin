@@ -24,5 +24,5 @@ jsonschema==3.0.2
 pyrsistent==0.15.4      # from jsonschema
 requests==2.22.0
 six==1.12.0             # from validators, jsonschema
-urllib3==1.25.3         # from requests 
+urllib3==1.25.8         # from requests 
 validators==0.14.0
