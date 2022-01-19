@@ -8,7 +8,8 @@ Packager:	Themis Zamani <themiszamani@gmail.com>
 Source:		%{name}-%{version}.tar.gz
 BuildArch:	noarch
 BuildRoot:	%{_tmppath}/%{name}-%{version}
-AutoReqProv: no
+AutoReqProv:    no
+Requires:       python-requests, python2-jsonschema, python-enum34
 
 %description
 Nagios probe to check functionality of B2SHARE service
