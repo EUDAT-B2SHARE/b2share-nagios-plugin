@@ -1,11 +1,8 @@
-PKGNAME=nagios-plugins-eudat-b2share
+PKGNAME=argo-probe-eudat-b2share
 SPECFILE=${PKGNAME}.spec
 FILES=check_b2share.py ${SPECFILE}
 
 PKGVERSION=$(shell grep -s '^Version:' $(SPECFILE) | sed -e 's/Version:\s*//')
-
-srpm: dist
-	rpmbuild -ts --define='dist .el6' ${PKGNAME}-${PKGVERSION}.tar.gz
 
 rpm: dist
 	rpmbuild -ta ${PKGNAME}-${PKGVERSION}.tar.gz
