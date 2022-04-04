@@ -37,3 +37,4 @@ install -m 755 check_b2share.py %{buildroot}/%{_libexecdir}/argo/probes/eudat-b2
 - Initial version of the package. 
 * Tue Nov 27 2018 Harri Hirvonsalo   <harri.hirvonsalo@csc.fi> - 0.1-1
 - Initial version of the package. 
+
