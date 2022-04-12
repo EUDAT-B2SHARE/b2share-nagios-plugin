@@ -149,13 +149,14 @@ if __name__ == '__main__':
 
             rec_with_files_url = None
             for hit in search_results['hits']['hits']:
-                # Check if there are files in the record
-                if len(hit['files']) > 0:
-                    # NTS: Could throw KeyError if there is something
-                    # seriously wrong or B2SHARE REST API responses have
-                    # changed.
-                    rec_with_files_url = hit['links']['self']
-                    break
+                if 'files' in hit:
+                    # Check if there are files in the record
+                    if len(hit['files']) > 0:
+                        # NTS: Could throw KeyError if there is something
+                        # seriously wrong or B2SHARE REST API responses have
+                        # changed.
+                        rec_with_files_url = hit['links']['self']
+                        break
 
             if rec_with_files_url:
 
