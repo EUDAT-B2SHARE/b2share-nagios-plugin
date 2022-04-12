@@ -1,5 +1,5 @@
 Name:		argo-probe-eudat-b2share
-Version:	0.5
+Version:	0.6
 Release:	1%{?dist}
 Summary:	Monitoring scripts that check the functionalities of B2SHARE
 License:	GPLv3+
