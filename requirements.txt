@@ -16,7 +16,7 @@
 # limitations under the License.
 
 attrs==19.1.0           # from jsonschema
-certifi==2019.6.16      # from requests
+certifi==2022.12.7      # from requests
 chardet==3.0.4          # from requests
 decorator==4.4.0        # from validators
 idna==2.8               # from requests
