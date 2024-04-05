@@ -1,7 +1,7 @@
 #
 # This file is part of B2SHARE Nagios monitoring plugin.
 #
-# Copyright (C) 2018 Harri Hirvonsalo
+# Copyright (C) 2024 Harri Hirvonsalo
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,14 +15,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-attrs==19.1.0           # from jsonschema
-certifi==2019.6.16      # from requests
-chardet==3.0.4          # from requests
-decorator==4.4.0        # from validators
-idna==2.8               # from requests
-jsonschema==3.0.2
-pyrsistent==0.15.4      # from jsonschema
-requests==2.22.0
-six==1.12.0             # from validators, jsonschema
-urllib3==1.25.3         # from requests 
-validators==0.14.0
+jsonschema==4.21.1
+requests==2.31.0

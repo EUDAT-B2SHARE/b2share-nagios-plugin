@@ -14,7 +14,7 @@
 #   limitations under the License.
 
 Name:		nagios-plugins-eudat-b2share
-Version:	0.1.1
+Version:	0.2.1
 Release:	1%{?dist}
 Summary:	Nagios B2SHARE probe
 License:	Apache License, Version 2.0
@@ -26,11 +26,9 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}
 
 AutoReqProv: no
 
-Requires:	python
-Requires:	python-argparse
-Requires:	python-requests
-Requires:	python-jsonschema
-Requires:	python-validators
+Requires:	python3
+Requires:	python3-requests
+Requires:	python3-jsonschema
 
 
 %description
@@ -40,7 +38,7 @@ Nagios probe to check functionality of B2SHARE Service
 %setup -q
 
 %define _unpackaged_files_terminate_build 0
-%define probe_namespace eudat-b2share 
+%define probe_namespace eudat-b2share
 
 %install
 
@@ -55,6 +53,10 @@ install -m 755 check_b2share.py %{buildroot}/%{_libexecdir}/argo-monitoring/prob
 %attr(0755,root,root) /%{_libexecdir}/argo-monitoring/probes/%{probe_namespace}/check_b2share.py
 
 %changelog
+* Fri Apr 05 2024 Giacomo Furlan   <giacomo.furlan@csc.fi> - 0.2.1
+- Update python to 3.9
+- Update requirements and dependencies
+- Remove validator dependency
 * Mon Sep 02 2019 Harri Hirvonsalo   <harri.hirvonsalo@csc.fi> - 0.1.1-1
 - Improved error handling to address false positive alerts.
 * Wed Dec 05 2018 Harri Hirvonsalo   <harri.hirvonsalo@csc.fi> - 0.1-1
