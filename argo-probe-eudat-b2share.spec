@@ -1,6 +1,6 @@
 Name:		argo-probe-eudat-b2share
 Version:	0.7
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Monitoring scripts that check the functionalities of B2SHARE
 License:	GPLv3+
 Packager:	Themis Zamani <themiszamani@gmail.com>
@@ -12,7 +12,6 @@ AutoReqProv:    no
 Requires:	python3
 Requires:	python3-requests
 Requires: 	python-jsonschema
-Requires: 	python-enum34
 
 %description
 Nagios probe to check functionality of B2SHARE service
