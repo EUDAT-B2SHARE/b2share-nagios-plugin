@@ -13,7 +13,16 @@ pipeline {
     stages {
         stage ('Build'){
             parallel {
-            
+                stage ('Build Rocky 9 RPM') {
+                    steps {
+                        echo 'Building Rocky 9 RPM...'
+                        withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'jenkins-rpm-repo', usernameVariable: 'REPOUSER', \
+                                                                    keyFileVariable: 'REPOKEY')]) {
+                            sh "/home/jenkins/build-rpm.sh -w ${WORKSPACE} -b ${BRANCH_NAME} -d rocky9 -p ${PROJECT_DIR} -s ${REPOKEY}"
+                        }
+                        archiveArtifacts artifacts: '**/*.rpm', fingerprint: true
+                    }
+                }
                 stage ('Build Centos 7') {
                     agent {
                         docker {

@@ -24,9 +24,8 @@ from enum import IntEnum
 
 import jsonschema
 import requests
-import requests.packages.urllib3
-import validators
-from requests.exceptions import HTTPError
+from requests.models import PreparedRequest
+from requests.exceptions import HTTPError, MissingSchema
 
 
 class Verbosity(IntEnum):
@@ -63,6 +62,20 @@ def get_dict_from_url(url, verify_tls_cert=False, verbosity=False):
         r.raise_for_status()
 
     return r.json()
+
+def validate_url(url):
+    """Validate if a string is an url.
+    Based on https://stackoverflow.com/a/34266413
+    (python-validators package was not available as rpm package in Rocky Linux 9)
+    """
+    prepared_request = PreparedRequest()
+    try:
+        prepared_request.prepare_url(url, None)
+        if not prepared_request.url:
+            return False
+    except MissingSchema:
+        return False
+    return True
 
 
 if __name__ == '__main__':
@@ -101,7 +114,7 @@ if __name__ == '__main__':
     verbosity = Verbosity(param.verbose)
 
     # Validate parameters
-    if not validators.url(param.url):
+    if not validate_url(param.url):
         raise SyntaxError(
             'CRITICAL: Invalid URL syntax {0}'.format(
                 param.url))
@@ -149,14 +162,10 @@ if __name__ == '__main__':
 
             rec_with_files_url = None
             for hit in search_results['hits']['hits']:
-                if 'files' in hit:
-                    # Check if there are files in the record
-                    if len(hit['files']) > 0:
-                        # NTS: Could throw KeyError if there is something
-                        # seriously wrong or B2SHARE REST API responses have
-                        # changed.
-                        rec_with_files_url = hit['links']['self']
-                        break
+                # Check if there are files in the record
+                if len(hit.get('files', "")) > 0:
+                    rec_with_files_url = hit['links']['self']
+                    break
 
             if rec_with_files_url:
 

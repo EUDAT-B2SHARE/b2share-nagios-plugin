@@ -11,8 +11,8 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}
 AutoReqProv:    no
 Requires:	python3
 Requires:	python3-requests
-Requires: 	python-jsonschema
-Requires: 	python-enum34
+Requires: python-jsonschema
+Requires: python-enum34
 
 %description
 Nagios probe to check functionality of B2SHARE service
@@ -38,8 +38,6 @@ install -m 755 check_b2share.py %{buildroot}/%{_libexecdir}/argo/probes/eudat-b2
 - Update python to 3.9
 - Update requirements and dependencies
 - Remove validator dependency
-* Mon Mar 14 2022 Themis Zamani <themiszamani@gmail.com> - 0.5
-- Update package prerequisites based on argo monitoring. 
 * Mon Mar 14 2022 Themis Zamani <themiszamani@gmail.com> - 0.5
 - Update package prerequisites based on argo monitoring. 
 * Tue Nov 27 2018 Themis Zamani  <themiszamani@gmail.com> - 0.1-1
