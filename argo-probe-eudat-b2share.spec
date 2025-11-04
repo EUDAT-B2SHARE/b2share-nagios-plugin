@@ -1,6 +1,6 @@
 Name:		argo-probe-eudat-b2share
-Version:	0.7
-Release:	2%{?dist}
+Version:	0.8
+Release:	1%{?dist}
 Summary:	Monitoring scripts that check the functionalities of B2SHARE
 License:	GPLv3+
 Packager:	Themis Zamani <themiszamani@gmail.com>
@@ -33,6 +33,8 @@ install -m 755 check_b2share.py %{buildroot}/%{_libexecdir}/argo/probes/eudat-b2
 %attr(0755,root,root) /%{_libexecdir}/argo/probes/eudat-b2share/check_b2share.py
 
 %changelog
+* Tue Nov 04 2025 Themis Zamani <themiszamani@gmail.com> - 0.8.1
+- Minor updates to url check 
 * Fri Apr 05 2024 Giacomo Furlan   <giacomo.furlan@csc.fi> - 0.2.1
 - Update python to 3.9
 - Update requirements and dependencies
