@@ -148,7 +148,7 @@ if __name__ == '__main__':
         print('---------------------------')
 
     try:
-        search_url = base_url + "/api/records/"
+        search_url = base_url + "/api/records?sort=newest&size=10"
 
         if verbosity > Verbosity.SINGLE:
             print('Making a search.')
