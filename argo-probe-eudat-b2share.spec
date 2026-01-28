@@ -1,5 +1,5 @@
 Name:		argo-probe-eudat-b2share
-Version:	0.8
+Version:	2.0
 Release:	1%{?dist}
 Summary:	Monitoring scripts that check the functionalities of B2SHARE
 License:	GPLv3+
@@ -19,7 +19,7 @@ Nagios probe to check functionality of B2SHARE service
 %prep
 %setup -q
 
-%define _unpackaged_files_terminate_build 0 
+%define _unpackaged_files_terminate_build 0
 
 %install
 install -d %{buildroot}/%{_libexecdir}/argo/probes/eudat-b2share
@@ -33,17 +33,19 @@ install -m 755 check_b2share.py %{buildroot}/%{_libexecdir}/argo/probes/eudat-b2
 %attr(0755,root,root) /%{_libexecdir}/argo/probes/eudat-b2share/check_b2share.py
 
 %changelog
+* Wed Feb 04 2026 Petri Laihonen <petri.laihonen@csc.fi> - 2.0-1
+- Changes in order to probe RDM-based B2SHARE application.
+- Added verbosity enhancements and updated timeout help text.
+- Both, B2SHARE v2 and v3 (Release 3.0.2 and above) are now supported.
 * Tue Nov 04 2025 Themis Zamani <themiszamani@gmail.com> - 0.8.1
-- Minor updates to url check 
+- Minor updates to url check
 * Fri Apr 05 2024 Giacomo Furlan   <giacomo.furlan@csc.fi> - 0.2.1
 - Update python to 3.9
 - Update requirements and dependencies
 - Remove validator dependency
 * Mon Mar 14 2022 Themis Zamani <themiszamani@gmail.com> - 0.5
-- Update package prerequisites based on argo monitoring. 
-* Mon Mar 14 2022 Themis Zamani <themiszamani@gmail.com> - 0.5
-- Update package prerequisites based on argo monitoring. 
+- Update package prerequisites based on argo monitoring.
 * Tue Nov 27 2018 Themis Zamani  <themiszamani@gmail.com> - 0.1-1
-- Initial version of the package. 
+- Initial version of the package.
 * Tue Nov 27 2018 Harri Hirvonsalo   <harri.hirvonsalo@csc.fi> - 0.1-1
-- Initial version of the package. 
+- Initial version of the package.
