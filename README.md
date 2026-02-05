@@ -123,3 +123,37 @@ docker run -it --rm <name_of_the_image>:<tag_of_the_image> bash
 ## Credits
 
 This code is based on [EUDAT-B2ACCESS/b2access-probe](https://github.com/EUDAT-B2ACCESS/b2access-probe)
+
+---
+
+Your script now supports:
+✔ Default robust mode
+
+ignores vocabulary fields
+validates structural metadata
+stable across all RDM/B2SHARE instances
+no false negatives
+
+✔ --debug-metadata
+Prints ignored vocabulary fields like:
+DEBUG-METADATA: Ignoring vocabulary key 'subjects[7].scheme'
+
+✔ --strict-metadata
+Fails on any unexpected vocabulary field.
+
+Usage examples:
+
+Default (robust) — ignore vocab diffs:
+./check_b2share.py -u https://b2share.example -vvv
+
+See what was ignored (keeps robust behavior):
+/check_b2share.py -u https://b2share.example -vvv --metadata-report
+
+Debug each stripped key (chatty; stderr):
+./check_b2share.py -u https://b2share.example -vvv --debug-metadata
+
+Strict (may fail on vocab enrichments):
+./check_b2share.py -u https://b2share.example -vvv --strict-metadata
+
+Strict + report (show keys that likely caused failures):
+./check_b2share.py -u https://b2share.example -vvv --strict-metadata --metadata-report
