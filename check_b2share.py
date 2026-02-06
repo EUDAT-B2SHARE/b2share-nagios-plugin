@@ -168,7 +168,7 @@ def finalize_version(bucket_json: dict) -> str:
 # ---------------- Main ----------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Unified B2SHARE Nagios probe")
+    parser = argparse.ArgumentParser(description="B2SHARE Nagios probe")
 
     parser.add_argument("-u", "--url", required=True,
                         help="Base URL of B2SHARE instance")
@@ -193,11 +193,11 @@ def main():
 
     # Metadata validation knobs
     parser.add_argument("--strict-metadata", action="store_true", default=False,
-                        help="Enable strict JSON Schema validation (do NOT ignore vocabulary fields)")
+                        help="(v3 Only). Enable strict JSON Schema validation (do NOT ignore vocabulary fields)")
     parser.add_argument("--debug-metadata", action="store_true", default=False,
-                        help="Print ignored vocabulary fields during validation (non-strict mode only)")
+                        help="(v3 Only). Print ignored vocabulary fields during validation (non-strict mode only)")
     parser.add_argument("--metadata-report", action="store_true", default=False,
-                        help="Print a summary report of vocabulary-like keys (ignored in non-strict, detected in strict)")
+                        help="(v3 Only). Print a summary report of vocabulary-like keys (ignored in non-strict, detected in strict)")
 
     p = parser.parse_args()
 
@@ -304,6 +304,9 @@ def main():
         # Version detection must follow the bucket fetch
         version = finalize_version(bucket)
 
+        if version != "v3" and p.metadata_report and verbosity > Verbosity.SINGLE:
+            print("METADATA-REPORT: not applicable for B2SHARE v2 (no vocab enrichment).", file=sys.stderr)
+
         # Version-specific validation ----------------------
         if version == "v3":
             if verbosity > Verbosity.SINGLE:
@@ -316,51 +319,58 @@ def main():
 
             md_schema = build_metadata_schema(parent_schema)
 
-            # Decide message based on strictness
-            if verbosity > Verbosity.SINGLE:
-                if p.strict_metadata:
+            # Prepare metadata input and vocabulary report list
+            metadata_input = rec["metadata"]
+            extras_report = []
+
+            # STRICT MODE -----------------------------------------
+            if p.strict_metadata:
+                if verbosity > Verbosity.SINGLE:
                     print("Validating record's metadata against metadata schema (STRICT).",
                           file=sys.stderr)
-                else:
+
+                # Populate report BEFORE validation
+                if p.metadata_report:
+                    extras_report = scan_vocab_extras(metadata_input)
+                    print("METADATA-REPORT: vocabulary-like keys (strict mode):", file=sys.stderr)
+                    if extras_report:
+                        for path in sorted(set(extras_report)):
+                            print(f"  - {path}", file=sys.stderr)
+                        print(f"METADATA-REPORT: total={len(set(extras_report))}", file=sys.stderr)
+                    else:
+                        print("  (none)", file=sys.stderr)
+
+                # Now perform strict validation
+                jsonschema.validate(metadata_input, md_schema)
+
+            # NON-STRICT MODE -------------------------------------
+            else:
+                if verbosity > Verbosity.SINGLE:
                     print("Validating record's metadata against metadata schema (vocabulary ignored).",
                           file=sys.stderr)
 
-            metadata_input = rec["metadata"]
-
-            # For reporting
-            extras_report = []
-
-            if not p.strict_metadata:
                 metadata_input = sanitize_rdm_metadata(
                     metadata_input,
                     debug=p.debug_metadata,
                     report=(extras_report if p.metadata_report else None)
                 )
-            elif p.metadata_report:
-                # Strict mode: collect a detection-only report (no strip)
-                extras_report = scan_vocab_extras(metadata_input)
 
-            # Perform validation
-            try:
-                jsonschema.validate(metadata_input, md_schema)
-            except jsonschema.ValidationError as e:
-                if p.strict_metadata:
-                    raise
-                else:
+                try:
+                    jsonschema.validate(metadata_input, md_schema)
+                except jsonschema.ValidationError as e:
                     if verbosity > Verbosity.MULTI:
                         print("WARNING: Non-strict metadata validation warning:", file=sys.stderr)
                         print(f"Details: {e.message}", file=sys.stderr)
-                    # continue under non-strict mode
 
-            # Emit metadata report if requested
-            if p.metadata_report:
-                if extras_report:
-                    print("METADATA-REPORT: vocabulary-like keys:", file=sys.stderr)
-                    for path in sorted(set(extras_report)):
-                        print(f"  - {path}", file=sys.stderr)
-                    print(f"METADATA-REPORT: total={len(set(extras_report))}", file=sys.stderr)
-                else:
-                    print("METADATA-REPORT: no vocabulary-like keys detected.", file=sys.stderr)
+                # Report only after sanitization
+                if p.metadata_report:
+                    print("METADATA-REPORT: vocabulary-like keys (ignored):", file=sys.stderr)
+                    if extras_report:
+                        for path in sorted(set(extras_report)):
+                            print(f"  - {path}", file=sys.stderr)
+                        print(f"METADATA-REPORT: total={len(set(extras_report))}", file=sys.stderr)
+                    else:
+                        print("  (none)", file=sys.stderr)
 
         else:
             # v2 validation

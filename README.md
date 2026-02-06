@@ -59,28 +59,32 @@ jsonschema==4.25.1
 
 ```bash
 $ python check_b2share.py -h
-usage: check_b2share.py [-h] -u URL [-t TIMEOUT] [-v] [--verify-tls-cert] [--no-verify-tls-cert] [--error-if-no-records-present] [--use-proxy]
+usage: check_b2share.py [-h] -u URL [-t TIMEOUT] [-v] [--verify-tls-cert] [--no-verify-tls-cert] [--error-if-no-records-present] [--use-proxy] [--strict-metadata] [--debug-metadata]
+                        [--metadata-report]
 
-Unified B2SHARE Nagios probe
+B2SHARE Nagios probe
 
 options:
   -h, --help            show this help message and exit
   -u URL, --url URL     Base URL of B2SHARE instance
   -t TIMEOUT, --timeout TIMEOUT
                         Timeout in seconds as positive integer. (default: 15)
-  -v, --verbose         Increase verbosity (-v, -vv, -vvv)
-  --verify-tls-cert     Verify TLS certificates (default: on)
-  --no-verify-tls-cert  Disable TLS verification
+  -v, --verbose         Increase output verbosity (-v, -vv, -vvv)
+  --verify-tls-cert     Verify TLS certificate (default: enabled)
+  --no-verify-tls-cert  Disable TLS verification (NOT recommended)
   --error-if-no-records-present
-                        Return CRITICAL if no public records exist.
-  --use-proxy           Use environment proxies. Default: off.
+                        Return CRITICAL if no public records are present
+  --use-proxy           Allow requests to use environment proxies.
+  --strict-metadata     (v3 Only). Enable strict JSON Schema validation (do NOT ignore vocabulary fields)
+  --debug-metadata      (v3 Only). Print ignored vocabulary fields during validation (non-strict mode only)
+  --metadata-report     (v3 Only). Print a summary report of vocabulary-like keys (ignored in non-strict, detected in strict)
 ```
 
 Example:
 
-`$ ./check_b2share.py -u https://b2share.eudat.eu:443 -t 10 -vvv`
-
 ```bash
+./check_b2share.py -u https://b2share.eudat.eu:443 -t 10 -vvv
+
 Verbosity level: 3
 Timeout: 10 seconds
 B2SHARE URL: https://b2share.eudat.eu:443
@@ -104,6 +108,22 @@ Fetching first file of the bucket.
 OK: records, metadata schemas and files are accessible
 ```
 
+Extra usage examples for B2SHARE v3:
+
+```bash
+# See what was ignored:
+./check_b2share.py -u https://b2share.eudat.eu:443 -vvv --metadata-report
+
+# Debug each stripped key (chatty; stderr):
+./check_b2share.py -u https://b2share.eudat.eu:443 -vvv --debug-metadata
+
+# Strict (may fail on vocab enrichments):
+./check_b2share.py -u https://b2share.eudat.eu:443 -vvv --strict-metadata
+
+# Strict + report (show keys that likely caused failures):
+./check_b2share.py -u https://b2share.eudat.eu:443 -vvv --strict-metadata --metadata-report
+```
+
 ## How to run the code in a container
 
 In the root folder of the project, build the container:
@@ -123,37 +143,3 @@ docker run -it --rm <name_of_the_image>:<tag_of_the_image> bash
 ## Credits
 
 This code is based on [EUDAT-B2ACCESS/b2access-probe](https://github.com/EUDAT-B2ACCESS/b2access-probe)
-
----
-
-Your script now supports:
-✔ Default robust mode
-
-ignores vocabulary fields
-validates structural metadata
-stable across all RDM/B2SHARE instances
-no false negatives
-
-✔ --debug-metadata
-Prints ignored vocabulary fields like:
-DEBUG-METADATA: Ignoring vocabulary key 'subjects[7].scheme'
-
-✔ --strict-metadata
-Fails on any unexpected vocabulary field.
-
-Usage examples:
-
-Default (robust) — ignore vocab diffs:
-./check_b2share.py -u https://b2share.example -vvv
-
-See what was ignored (keeps robust behavior):
-/check_b2share.py -u https://b2share.example -vvv --metadata-report
-
-Debug each stripped key (chatty; stderr):
-./check_b2share.py -u https://b2share.example -vvv --debug-metadata
-
-Strict (may fail on vocab enrichments):
-./check_b2share.py -u https://b2share.example -vvv --strict-metadata
-
-Strict + report (show keys that likely caused failures):
-./check_b2share.py -u https://b2share.example -vvv --strict-metadata --metadata-report
