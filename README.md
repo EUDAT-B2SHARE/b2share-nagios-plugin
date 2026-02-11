@@ -58,9 +58,8 @@ jsonschema==4.25.1
 ## How it works?
 
 ```bash
-$ python check_b2share.py -h
-usage: check_b2share.py [-h] -u URL [-t TIMEOUT] [-v] [--verify-tls-cert] [--no-verify-tls-cert] [--error-if-no-records-present] [--use-proxy] [--strict-metadata] [--debug-metadata]
-                        [--metadata-report]
+./check_b2share.py --help
+usage: check_b2share.py [-h] -u URL [-t TIMEOUT] [-v] [--verify-tls-cert] [--no-verify-tls-cert] [--error-if-no-records-present] [--use-proxy] [--debug-metadata] [--metadata-report]
 
 B2SHARE Nagios probe
 
@@ -75,37 +74,34 @@ options:
   --error-if-no-records-present
                         Return CRITICAL if no public records are present
   --use-proxy           Allow requests to use environment proxies.
-  --strict-metadata     (v3 Only). Enable strict JSON Schema validation (do NOT ignore vocabulary fields)
-  --debug-metadata      (v3 Only). Print ignored vocabulary fields during validation (non-strict mode only)
-  --metadata-report     (v3 Only). Print a summary report of vocabulary-like keys (ignored in non-strict, detected in strict)
+  --debug-metadata      (v3 Only). Print ignored vocabulary fields during validation
+  --metadata-report     (v3 Only). Print a summary report of vocabulary-like keys
 ```
 
 Example:
 
 ```bash
-./check_b2share.py -u https://b2share.eudat.eu:443 -t 10 -vvv
-
+14:26 $ ./check_b2share.py -u https://b2share.eudat.eu:443 -vvv
 Verbosity level: 3
-Timeout: 10 seconds
+Timeout: 15 seconds
 B2SHARE URL: https://b2share.eudat.eu:443
 Starting B2SHARE Probe...
 ---------------------------
 Making a search.
 Making a HTTP GET request to https://b2share.eudat.eu:443/api/records?sort=newest&size=10
-hits: 6
-Search returned some results.
-A record containing files was found.
-Making a HTTP GET request to https://b2share.eudat.eu:443/api/records/0526t-n1w45
-Fetching record's metadata schema.
-Making a HTTP GET request to https://b2share.eudat.eu:443/api/schemas/records/record-v10.0.0.json/jsonschema
-Validating parent record schema (draft-07).
-Building metadata-only schema from parent schema.
-Validating record's metadata against metadata schema.
-Accessing file bucket of the record.
-Making a HTTP GET request to https://b2share.eudat.eu:443/api/records/0526t-n1w45/files
-Fetching first file of the bucket.
+hits: 11718
+A record with files was found.
+Making a HTTP GET request to https://b2share.eudat.eu/api/records/h4rf8-38964
+Fetching record metadata schema.
+Making a HTTP GET request to https://b2share.eudat.eu/api/schemas/records/record-v10.0.0.json/jsonschema
+Accessing file bucket.
+Making a HTTP GET request to https://b2share.eudat.eu/api/records/h4rf8-38964/files
+Validating parent schema (draft-07).
+Building metadata-only schema.
+Validating metadata (vocabulary fields ignored).
+Fetching first file of bucket (HEAD).
 ---------------------------
-OK: records, metadata schemas and files are accessible
+OK: records, metadata schemas and files are accessible.
 ```
 
 Extra usage examples for B2SHARE v3:
@@ -116,13 +112,31 @@ Extra usage examples for B2SHARE v3:
 
 # Debug each stripped key (chatty; stderr):
 ./check_b2share.py -u https://b2share.eudat.eu:443 -vvv --debug-metadata
-
-# Strict (may fail on vocab enrichments):
-./check_b2share.py -u https://b2share.eudat.eu:443 -vvv --strict-metadata
-
-# Strict + report (show keys that likely caused failures):
-./check_b2share.py -u https://b2share.eudat.eu:443 -vvv --strict-metadata --metadata-report
 ```
+
+## How the timeout calculations work
+
+* Each individual request uses "time remaining" as its timeout
+* But every request can take up to that long
+* And you can have multiple requests in sequence (search → record → schema → bucket → file HEAD)
+
+This means the script’s total runtime may exceed the user‑specified timeout.
+
+Why?
+
+Because each request gets a fresh timeout based on the remaining window, not the original timeout.
+
+Example:
+
+* User sets --timeout 15
+* First request uses ~0 seconds, so timeout ~14.9s
+* Second request gets ~14s
+* Third request gets ~13.5s
+* and so on...
+
+In the worst case:
+
+If several requests hang until their individual timeout, The total script runtime might reach 2-4× the requested timeout.
 
 ## How to run the code in a container
 
