@@ -37,6 +37,18 @@ def validate_url(url: str) -> bool:
     except MissingSchema:
         return False
 
+# Common enrichment keys seen across Invenio-RDM vocabularies and UI dumps.
+UI_EXTRA_KEYS = {
+    "icon",
+    "props",
+    "tags",
+    "scheme",
+    "uri",
+    "identifier",
+    "identifiers",
+    "description",
+    "links",
+}
 
 # ---------------- Vocabulary / RDM sanitization & reporting ----------------
 
