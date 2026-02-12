@@ -1,5 +1,5 @@
 Name:		argo-probe-eudat-b2share
-Version:	2.1
+Version:	2.2
 Release:	1%{?dist}
 Summary:	Monitoring scripts that check the functionalities of B2SHAR (v2 + v3/RDM)
 License:	GPLv3+
@@ -24,7 +24,6 @@ The unified probe performs:
 
 
 Additional B2SHARE v3 options:
-- --strict-metadata      : strict JSON Schema validation for RDM metadata
 - --debug-metadata       : log stripped vocabulary keys (non-strict mode)
 - --metadata-report      : print a summary of vocabulary-like keys
 
@@ -45,6 +44,10 @@ install -m 755 check_b2share.py %{buildroot}/%{_libexecdir}/argo/probes/eudat-b2
 %attr(0755,root,root) /%{_libexecdir}/argo/probes/eudat-b2share/check_b2share.py
 
 %changelog
+
+* Fri Feb 11 2026 Petri Laihonen <petri.laihonen@csc.fi> - 2.2-1
+- Remove --strict-metadata option
+- Update README
 
 * Fri Feb 06 2026 Petri Laihonen <petri.laihonen@csc.fi> - 2.1-1
 - Add --strict-metadata, --debug-metadata, and --metadata-report options
