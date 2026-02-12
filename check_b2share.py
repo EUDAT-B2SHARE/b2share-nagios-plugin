@@ -4,10 +4,9 @@
 #
 # Original script Copyright (C) 2018 Harri Hirvonsalo
 # Modified for the RDM based B2SHARE by Petri Laihonen
-# - Copilot was used in part with the changes needed.
 #
 # Apache License 2.0
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 """Script for checking health and availability of a B2SHARE RDM instance."""
 
@@ -53,6 +52,7 @@ UI_EXTRA_KEYS = {
     "description",
     "links",
 }
+
 
 def sanitize_rdm_metadata(obj, debug=False, path="", report=None):
     """
@@ -144,7 +144,6 @@ def build_metadata_schema(parent_schema: dict) -> dict:
 def get_json(sess, url, verify, timeout_s, verbosity):
     if verbosity > Verbosity.MULTI:
         print(f"Making a HTTP GET request to {url}", file=sys.stderr)
-
     r = sess.get(
         url,
         verify=verify,
@@ -191,13 +190,11 @@ def main():
     parser.add_argument("--use-proxy", action="store_true", default=False,
                         help="Allow requests to use environment proxies.")
 
-    # Metadata validation knobs
-    parser.add_argument("--strict-metadata", action="store_true", default=False,
-                        help="(v3 Only). Enable strict JSON Schema validation (do NOT ignore vocabulary fields)")
+    # Metadata debugging/reporting
     parser.add_argument("--debug-metadata", action="store_true", default=False,
-                        help="(v3 Only). Print ignored vocabulary fields during validation (non-strict mode only)")
+                        help="(v3 Only). Print ignored vocabulary fields during validation")
     parser.add_argument("--metadata-report", action="store_true", default=False,
-                        help="(v3 Only). Print a summary report of vocabulary-like keys (ignored in non-strict, detected in strict)")
+                        help="(v3 Only). Print a summary report of vocabulary-like keys")
 
     p = parser.parse_args()
 
@@ -233,7 +230,7 @@ def main():
         sess.trust_env = bool(p.use_proxy)
         sess.headers.update({"User-Agent": "b2share-unified-nagios/2.1 (+nagios)"})
 
-        # Search -------------------------------------------
+        # ---------------- Search ----------------
         if verbosity > Verbosity.SINGLE:
             print("Making a search.", file=sys.stderr)
 
@@ -246,9 +243,9 @@ def main():
 
         if total == 0:
             if verbosity > Verbosity.SINGLE:
-                print("No search results returned by the query.", file=sys.stderr)
+                print("No search results returned.", file=sys.stderr)
             if p.error_if_no_records_present:
-                print("CRITICAL: It seems that there are no records stored in this B2SHARE instance")
+                print("CRITICAL: No public records found.")
                 sys.exit(2)
             if verbosity > Verbosity.NONE:
                 print("---------------------------")
@@ -257,10 +254,7 @@ def main():
 
         hits = search["hits"]["hits"]
 
-        if verbosity > Verbosity.SINGLE:
-            print("Search returned some results.", file=sys.stderr)
-
-        # Prefer a record with files -----------------------
+        # Prefer record with files
         rec_with_files_url = None
         for h in hits:
             if h.get("files"):
@@ -268,22 +262,21 @@ def main():
                 break
 
         if rec_with_files_url:
-            if verbosity > Verbosity.SINGLE:
-                print("A record containing files was found.", file=sys.stderr)
             record_url = rec_with_files_url
-        else:
             if verbosity > Verbosity.SINGLE:
-                print("No records containing files were found.", file=sys.stderr)
-                print("Fetching a record without files.", file=sys.stderr)
+                print("A record with files was found.", file=sys.stderr)
+        else:
             record_url = hits[0]["links"]["self"]
+            if verbosity > Verbosity.SINGLE:
+                print("No records with files found; using first record.", file=sys.stderr)
 
-        # Fetch record -------------------------------------
+        # ---------------- Fetch record ----------------
         rec = get_json(sess, record_url, p.verify_tls_cert,
                        max(0.5, deadline - time.monotonic()), verbosity)
 
-        # Fetch schema URL ---------------------------------
+        # ---------------- Fetch schema ----------------
         if verbosity > Verbosity.SINGLE:
-            print("Fetching record's metadata schema.", file=sys.stderr)
+            print("Fetching record metadata schema.", file=sys.stderr)
 
         try:
             schema_url = discover_schema_url(rec)
@@ -293,9 +286,9 @@ def main():
         parent_schema = get_json(sess, schema_url, p.verify_tls_cert,
                                  max(0.5, deadline - time.monotonic()), verbosity)
 
-        # Fetch bucket FIRST -------------------------------
+        # ---------------- Fetch bucket ----------------
         if verbosity > Verbosity.SINGLE:
-            print("Accessing file bucket of the record.", file=sys.stderr)
+            print("Accessing file bucket.", file=sys.stderr)
 
         bucket_url = rec["links"]["files"]
         bucket = get_json(sess, bucket_url, p.verify_tls_cert,
@@ -305,17 +298,18 @@ def main():
         version = finalize_version(bucket)
 
         if version != "v3" and p.metadata_report and verbosity > Verbosity.SINGLE:
-            print("METADATA-REPORT: not applicable for B2SHARE v2 (no vocab enrichment).", file=sys.stderr)
+            print("METADATA-REPORT: Not applicable to v2.", file=sys.stderr)
 
-        # Version-specific validation ----------------------
+        # ---------------- Version-specific validation ----------------
+
         if version == "v3":
             if verbosity > Verbosity.SINGLE:
-                print("Validating parent record schema (draft-07).", file=sys.stderr)
+                print("Validating parent schema (draft-07).", file=sys.stderr)
 
             jsonschema.Draft7Validator.check_schema(parent_schema)
 
             if verbosity > Verbosity.SINGLE:
-                print("Building metadata-only schema from parent schema.", file=sys.stderr)
+                print("Building metadata-only schema.", file=sys.stderr)
 
             md_schema = build_metadata_schema(parent_schema)
 
@@ -323,59 +317,35 @@ def main():
             metadata_input = rec["metadata"]
             extras_report = []
 
-            # STRICT MODE -----------------------------------------
-            if p.strict_metadata:
-                if verbosity > Verbosity.SINGLE:
-                    print("Validating record's metadata against metadata schema (STRICT).",
-                          file=sys.stderr)
+            if verbosity > Verbosity.SINGLE:
+                print("Validating metadata (vocabulary fields ignored).", file=sys.stderr)
 
-                # Populate report BEFORE validation
-                if p.metadata_report:
-                    extras_report = scan_vocab_extras(metadata_input)
-                    print("METADATA-REPORT: vocabulary-like keys (strict mode):", file=sys.stderr)
-                    if extras_report:
-                        for path in sorted(set(extras_report)):
-                            print(f"  - {path}", file=sys.stderr)
-                        print(f"METADATA-REPORT: total={len(set(extras_report))}", file=sys.stderr)
-                    else:
-                        print("  (none)", file=sys.stderr)
+            metadata_input = sanitize_rdm_metadata(
+                metadata_input,
+                debug=p.debug_metadata,
+                report=(extras_report if p.metadata_report else None)
+            )
 
-                # Now perform strict validation
+            try:
                 jsonschema.validate(metadata_input, md_schema)
+            except jsonschema.ValidationError as e:
+                if verbosity > Verbosity.MULTI:
+                    print("WARNING: Metadata validation warning.", file=sys.stderr)
+                print(f"Details: {e.message}", file=sys.stderr)
 
-            # NON-STRICT MODE -------------------------------------
-            else:
-                if verbosity > Verbosity.SINGLE:
-                    print("Validating record's metadata against metadata schema (vocabulary ignored).",
-                          file=sys.stderr)
-
-                metadata_input = sanitize_rdm_metadata(
-                    metadata_input,
-                    debug=p.debug_metadata,
-                    report=(extras_report if p.metadata_report else None)
-                )
-
-                try:
-                    jsonschema.validate(metadata_input, md_schema)
-                except jsonschema.ValidationError as e:
-                    if verbosity > Verbosity.MULTI:
-                        print("WARNING: Non-strict metadata validation warning:", file=sys.stderr)
-                        print(f"Details: {e.message}", file=sys.stderr)
-
-                # Report only after sanitization
-                if p.metadata_report:
-                    print("METADATA-REPORT: vocabulary-like keys (ignored):", file=sys.stderr)
-                    if extras_report:
-                        for path in sorted(set(extras_report)):
-                            print(f"  - {path}", file=sys.stderr)
-                        print(f"METADATA-REPORT: total={len(set(extras_report))}", file=sys.stderr)
-                    else:
-                        print("  (none)", file=sys.stderr)
+            if p.metadata_report:
+                print("METADATA-REPORT: vocabulary-like keys (ignored):", file=sys.stderr)
+                if extras_report:
+                    for path in sorted(set(extras_report)):
+                        print(f" - {path}", file=sys.stderr)
+                    print(f"METADATA-REPORT: total={len(set(extras_report))}", file=sys.stderr)
+                else:
+                    print(" (none)", file=sys.stderr)
 
         else:
-            # v2 validation
+            # ---------------- v2 validation ----------------
             if verbosity > Verbosity.SINGLE:
-                print("Validating record's metadata schema.", file=sys.stderr)
+                print("Validating v2 metadata schema.", file=sys.stderr)
 
             jsonschema.Draft4Validator.check_schema(parent_schema)
 
@@ -384,14 +354,14 @@ def main():
 
             jsonschema.validate(rec["metadata"], parent_schema)
 
-        # File HEAD test ----------------------------------
+        # ---------------- File HEAD test ----------------
         if version == "v3":
             file_url = bucket["entries"][0]["links"]["self"]
         else:
             file_url = bucket["contents"][0]["links"]["self"]
 
         if verbosity > Verbosity.SINGLE:
-            print("Fetching first file of the bucket.", file=sys.stderr)
+            print("Fetching first file of bucket (HEAD).", file=sys.stderr)
 
         hr = sess.head(
             file_url,
@@ -401,14 +371,14 @@ def main():
         hr.raise_for_status()
 
         # Success -----------------------------------------
-        if verbosity > Verbosity.NONE:
-            print("---------------------------")
+        print("---------------------------")
         print("OK: records, metadata schemas and files are accessible.")
         sys.exit(0)
 
     except HTTPError as e:
         print(f"CRITICAL: {repr(e)}")
         sys.exit(2)
+
     except (ValueError, KeyError, RequestException) as e:
         print(f"CRITICAL: {repr(e)}")
         sys.exit(2)
